@@ -20,6 +20,12 @@ def get_label_names(dataset):
         label_names[2] = 'RIGHT_KIDNEY'
         label_names[3] = 'LEFT_KIDNEY'
         label_names[4] = 'SPLEEN'        
+    elif dataset == 'ABDOMEN_MR_T1':
+        label_names[0] = 'BG'
+        label_names[1] = 'LIVER'
+        label_names[2] = 'RIGHT_KIDNEY'
+        label_names[3] = 'LEFT_KIDNEY'
+        label_names[4] = 'SPLEEN'
     elif dataset == 'ABDOMEN_CT':
         label_names[0] = 'BG'
         label_names[1] = 'SPLEEN'
@@ -195,6 +201,14 @@ def get_folds(dataset):
         FOLD[4].update([0])
         return FOLD
     elif dataset == 'ABDOMEN_MR':
+        FOLD[0] = set(range(0, 5))
+        FOLD[1] = set(range(4, 9))
+        FOLD[2] = set(range(8, 13))
+        FOLD[3] = set(range(12, 17))
+        FOLD[4] = set(range(16, 20))
+        FOLD[4].update([0])
+        return FOLD
+    elif dataset == 'ABDOMEN_MR_T1':
         FOLD[0] = set(range(0, 5))
         FOLD[1] = set(range(4, 9))
         FOLD[2] = set(range(8, 13))

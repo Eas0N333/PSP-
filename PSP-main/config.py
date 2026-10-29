@@ -85,6 +85,7 @@ def cfg():
     path = {
         'log_dir': './runs',
         'ABDOMEN_MR': {'data_dir': './data/ABD/ABDOMEN_MR'},
+        'ABDOMEN_MR_T1': {'data_dir': './data/ABD/ABDOMEN_MR_T1'},
         'ABDOMEN_CT': {'data_dir': './data/ABD/ABDOMEN_CT'},
         'CARDIAC_bssFP': {'data_dir': './data/Cardiac/bSSFP'},
         'CARDIAC_LGE': {'data_dir': './data/Cardiac/LGE'},

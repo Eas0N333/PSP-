@@ -27,6 +27,8 @@ class TestDataset(Dataset):
             self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'cmr_LGE_normalized/image*'))
         elif args['dataset'] == 'ABDOMEN_MR':
             self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'chaos_MR_T2_normalized/image*'))
+        elif args['dataset'] == 'ABDOMEN_MR_T1':
+            self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'chaos_MR_T1_normalized/image*'))
         elif args['dataset'] == 'ABDOMEN_CT':
             self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'sabs_CT_normalized/image*'))
         elif args['dataset'] == 'BRAIN_TUMOR_MR_flair':
@@ -196,6 +198,9 @@ class TrainDataset(Dataset):
         elif args['dataset'] == 'ABDOMEN_MR':
             self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'chaos_MR_T2_normalized/image*'))
             self.label_dirs = glob.glob(os.path.join(args['data_dir'], 'chaos_MR_T2_normalized/label*'))
+        elif args['dataset'] == 'ABDOMEN_MR_T1':
+            self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'chaos_MR_T1_normalized/image*'))
+            self.label_dirs = glob.glob(os.path.join(args['data_dir'], 'chaos_MR_T1_normalized/label*'))
         elif args['dataset'] == 'ABDOMEN_CT':
             self.image_dirs = glob.glob(os.path.join(args['data_dir'], 'sabs_CT_normalized/image*'))
             self.label_dirs = glob.glob(os.path.join(args['data_dir'], 'sabs_CT_normalized/label*'))

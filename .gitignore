@@ -30,3 +30,12 @@ __pycache__/
 # ---- 系统 ----
 .DS_Store
 Thumbs.db
+
+# ---- sacred 运行目录(每次运行会复制一份源码,不该入库)----
+exps_*/
+exps_on_*/
+result_*/
+result/
+interm_preds/
+trial_data_analyze/trial_result
+results.txt

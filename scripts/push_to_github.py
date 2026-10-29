@@ -92,10 +92,18 @@ def main():
         with open(full, "rb") as f:
             raw = f.read()
         try:
-            content = raw.decode("utf-8")
+            text = raw.decode("utf-8")
+            # 文本文件:直接内联进 tree
+            tree.append({"path": rel, "mode": "100644", "type": "blob", "content": text})
         except UnicodeDecodeError:
-            content = base64.b64encode(raw).decode()
-        tree.append({"path": rel, "mode": "100644", "type": "blob", "content": content})
+            # 二进制文件(如 PNG):先建 base64 blob,再用 sha 引用
+            blob = api(
+                "/repos/{}{}/git/blobs".format(OWNER, REPO),
+                token,
+                "POST",
+                {"content": base64.b64encode(raw).decode(), "encoding": "base64"},
+            )
+            tree.append({"path": rel, "mode": "100644", "type": "blob", "sha": blob["sha"]})
         print("  + {}".format(rel), flush=True)
 
     info = api("/repos/{}{}".format(OWNER, REPO), token)
