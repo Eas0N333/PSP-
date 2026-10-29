@@ -81,8 +81,13 @@ compactness 必须小:默认的 10 会把区域切成小块,单层内最多 64 �
 | `dataloader/image_transforms.py:6` | `from collections import Sequence` → `collections.abc`(Python 3.10+) |
 | `dataloader/datasets.py` | 两处 if 链各加 `ABDOMEN_MR_T1` 分支 → `chaos_MR_T1_normalized` |
 | `dataloader/dataset_specifics.py` | `get_label_names` / `get_folds` 各加 `ABDOMEN_MR_T1`(划分与 ABDOMEN_MR 一致) |
-| `config.py` | `path` 表加 `ABDOMEN_MR_T1` |
+| `config.py` | `path` 表加 `ABDOMEN_MR_T1`;新增 `start_iter` / `iter_budget`(默认 0,关闭) |
+| `train.py` | 支持断点续训:读 `reload_model_path`(可为 `resume_*.pth`,含模型+优化器+步数)、按 `start_iter` 恢复 lr、每块末尾补存一份续训快照。默认参数下行为与官方一致 |
 | `supervoxels/` | 从 ADNet 补齐(原仓库缺失) |
+
+> 续训补丁的动机:单次会话对单条命令有时长上限,而完整训练需 2 小时以上。
+> 分块训练用 `scripts/run_chunk.sh` 驱动,每块 1700 步。
+> 注意:分块训练**不是**逐 bit 复现(数据采样 RNG 未跨块保存),只保证优化轨迹连续。
 
 ---
 
@@ -108,15 +113,43 @@ compactness 必须小:默认的 10 会把区域切成小块,单层内最多 64 �
 只训练 1500 步(论文是 30001 步)就到 50.5%,说明链路是对的、方法在跨序列场景确实有效。
 **这不是论文表格里可比的数字**(数据集/域对/训练量都不同),只作链路验证。
 
-### 正式实验
+### 正式训练(fold 0,30630 步,约 2.4 小时)
+
+源域 T2-SPIR `fold0`(`fold0` 的 5 例做测试集),按论文设置 SGD lr=1e-3 / gamma=0.98 / 每 1000 步存快照,
+实际跑到 30630 步(分块驱动器最后一块略超 30001)。
+
+**跨序列:T2-SPIR → T1-DUAL**(单折,`supp_idx=2`,`n_part=3`)
+
+| 步数 | LIVER | RK | LK | SPLEEN | Mean |
+| --- | --- | --- | --- | --- | --- |
+| 5 000 | — | — | — | — | 0.5284 |
+| 8 530 | 0.5767 | 0.5566 | 0.5752 | 0.4256 | 0.5335 |
+| 15 000 | — | — | — | — | 0.5169 |
+| 20 000 | — | — | — | — | 0.4917 |
+| 25 000 | — | — | — | — | 0.5083 |
+| 30 000 | 0.3728 | 0.4131 | 0.4649 | 0.4381 | 0.4222 |
+
+**同域参照:MR(T2-SPIR)→ MR**,同一份 30000 权重:
+
+| LIVER | RK | LK | SPLEEN | Mean |
+| --- | --- | --- | --- | --- |
+| 0.4147 | 0.7938 | 0.7606 | 0.6861 | **0.6638** |
+
+几点解读:
+
+1. 同域 0.664 vs 跨序列 ~0.50,跨域确实有掉点,符合论文的核心论点(域差异导致性能下降)。
+2. 跨序列在 5k–25k 步稳定在 0.49–0.53,**30k 掉到 0.42**,像是往源域过度拟合。
+   由于只跑了 1 折、`supp_idx` 固定为 2,单点波动也可能很大,不能据此下结论。
+3. 与论文表格**不可直接比较**:论文是 Abd-CT↔Abd-MR(跨模态,真实数据 BTCV+CHAOS)、5 折平均;
+   这里是 CHAOS 内部跨序列、单折、超体素用 SLIC 替代。仅作方法有效性验证。
+
+### 正式实验脚本
 
 ```bash
-bash scripts/run_train_abd_mr.sh 0        # 单折,约 2.5 小时
-bash scripts/run_train_abd_mr.sh          # 5 折,约 13 小时
-bash scripts/run_test_abd_mr2t1.sh        # 评估 + 5 折汇总
+bash scripts/run_train_abd_mr.sh        # 官方设置,5 折 × 30001 步(每折 ~2.4h)
+bash scripts/run_test_abd_mr2t1.sh      # 跨序列评估 + 5 折汇总
+bash scripts/run_chunk.sh 0 1700        # 分块续训(单次调用有时长上限时用)
 ```
-
-耗时依据:实测约 0.27 s/iter(256×256、batch=1、2080 Ti),30000 iter ≈ 2.3 小时。
 
 ---
 

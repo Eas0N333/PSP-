@@ -66,6 +66,21 @@ def main(_run, _config, _log):
     my_weight = torch.FloatTensor([0.1, 1.0]).cuda()
     criterion = nn.NLLLoss(ignore_index=255, weight=my_weight)
 
+    # 断点续训:加载模型/优化器状态,并把 lr 恢复到对应里程碑后再开始
+    if _config['reload_model_path'] is not None:
+        _log.info(f'Resuming from {_config["reload_model_path"]} (global iter {_config["start_iter"]})')
+        _ckpt = torch.load(_config['reload_model_path'], map_location='cpu')
+        if isinstance(_ckpt, dict) and 'model' in _ckpt:
+            model.load_state_dict(_ckpt['model'])
+            if 'optimizer' in _ckpt:
+                optimizer.load_state_dict(_ckpt['optimizer'])
+        else:
+            model.load_state_dict(_ckpt)
+        _lr_done = _config['start_iter'] // _config['max_iters_per_load']
+        for _g in optimizer.param_groups:
+            _g['lr'] = _config['optim']['lr'] * (_config['lr_step_gamma'] ** _lr_done)
+        _log.info(f'Resumed, lr = {optimizer.param_groups[0]["lr"]:.6f}')
+
     _log.info(f'Load data...')
     data_config = {
         'data_dir': _config['path'][_config['dataset']]['data_dir'],
@@ -93,12 +108,17 @@ def main(_run, _config, _log):
     n_sub_epochs = _config['n_steps'] // _config['max_iters_per_load']  # number of times for reloading
     log_loss = {'total_loss': 0, 'query_loss': 0, 'coarse_loss': 0, 'shape_loss': 0, 'rec_loss': 0, 'edge_loss': 0}
 
-    i_iter = 0
+    i_iter = _config['start_iter']
+    _stop = _config['start_iter'] + _config['iter_budget'] if _config['iter_budget'] > 0 else None
     _log.info(f'Start training...')
     for sub_epoch in range(n_sub_epochs):
+        if _stop is not None and i_iter >= _stop:
+            break
         _log.info(f'This is epoch "{sub_epoch}" of "{n_sub_epochs}" epochs.')
 
         for _, sample in enumerate(train_loader):
+            if _stop is not None and i_iter >= _stop:
+                break
             # Prepare episode data.
             support_images = [[shot.float().cuda() for shot in way]
                               for way in sample['support_images']]
@@ -163,10 +183,23 @@ def main(_run, _config, _log):
 
             if (i_iter + 1) % _config['save_snapshot_every'] == 0:
                 _log.info('###### Taking snapshot ######')
-                if (i_iter +1 )>= 1000:
-                    torch.save(model.state_dict(),
-                               os.path.join(f'{_run.observers[0].dir}/snapshots', f'{i_iter + 1}.pth'))
+                torch.save(model.state_dict(),
+                           os.path.join(f'{_run.observers[0].dir}/snapshots', f'{i_iter + 1}.pth'))
+                # 额外存一份可续训的状态(模型+优化器+全局步数)
+                torch.save({'model': model.state_dict(),
+                            'optimizer': optimizer.state_dict(),
+                            'iter': i_iter + 1},
+                           os.path.join(f'{_run.observers[0].dir}/snapshots', f'resume_{i_iter + 1}.pth'))
 
             i_iter += 1
+    # 分块训练收尾:无论是否落在 save_snapshot_every 的整数倍上,都存一份可续训状态
+    if i_iter % _config['save_snapshot_every'] != 0:
+        torch.save(model.state_dict(),
+                   os.path.join(f'{_run.observers[0].dir}/snapshots', f'{i_iter}.pth'))
+        torch.save({'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'iter': i_iter},
+                   os.path.join(f'{_run.observers[0].dir}/snapshots', f'resume_{i_iter}.pth'))
+        _log.info(f'Saved tail snapshot at iter {i_iter}')
     _log.info('End of training.')
     return 1

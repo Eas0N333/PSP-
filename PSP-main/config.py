@@ -70,6 +70,13 @@ def cfg():
     # reload_model_path = '.../ADNet/runs/ADNet_train_CHAOST2_cv0/3/snapshots/1000.pth'
     reload_model_path = None
 
+    # 断点续训(默认关闭,不影响官方行为):
+    #   start_iter  —— 全局步数偏移,决定 lr 该衰减到哪一档
+    #   iter_budget —— 本次调用最多跑多少步(0 表示跑满 n_steps)
+    # 配合 reload_model_path 指向 snapshots/resume_*.pth 使用
+    start_iter = 0
+    iter_budget = 0
+
     optim_type = 'sgd'
     optim = {
         'lr': 1e-3,
