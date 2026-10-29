@@ -1,0 +1,32 @@
+# ---- 数据(原始 + 预处理,体积巨大)----
+data/
+PSP-main/data/
+
+# ---- 模型权重 / 训练产物 ----
+checkpoint/
+PSP-main/checkpoint/
+*.pth
+*.pt
+*.ckpt
+exps_on_*/
+runs/
+result/
+*.log
+logs_*.txt
+
+# ---- 环境 & 安装器 ----
+setup/
+*.zip
+*.exe
+*.whl
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# ---- 私有笔记 ----
+.workbuddy/
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db

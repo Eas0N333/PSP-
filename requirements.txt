@@ -1,0 +1,21 @@
+# PSP 运行环境
+# 解释器: C:\Users\Easonpc\psp-python312\python.exe  (便携版 Python 3.12.9)
+# torch/torchvision 为 CUDA 12.1 本地轮子(上海交大镜像下载后手动 install)
+
+# torch==2.4.1+cu121   -> https://mirror.sjtu.edu.cn/pytorch-wheels/cu121/torch-2.4.1%2Bcu121-cp312-cp312-win_amd64.whl
+# torchvision==0.19.1+cu121 -> https://mirror.sjtu.edu.cn/pytorch-wheels/cu121/torchvision-0.19.1%2Bcu121-cp312-cp312-win_amd64.whl
+
+numpy==1.26.4
+matplotlib==3.7.5
+scipy==1.17.1
+simpleitk==2.5.6
+opencv-python==4.11.0.86
+scikit-image==0.26.0
+pillow==13.0.0
+nibabel==5.4.2
+json5==0.17.3
+sacred==0.8.7
+setuptools==69.5.1
+pyyaml==6.0.3
+tqdm==4.70.1
+yacs==0.1.8
